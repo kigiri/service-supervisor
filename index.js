@@ -8,11 +8,20 @@ const scaleway = require('./scaleway')
 const addProxy = require('./add-proxy')
 const addService = require('./add-service')
 const loadSevices = require('./load-services')
-
+const github = require('./github')
 const { DOMAIN, PORT } = process.env
+const db = require('./redis')
 
- createServer(server4k({
-  routes,
+createServer(server4k({
+  routes: {
+    OAUTH: { github: github.oauth },
+    GET: {
+      '/session': {
+        description: 'log user data',
+        handler: ({ session }) => session,
+      },
+    },
+  },
   domain: `https://supervisor.${DOMAIN}`,
   allowOrigin: `https://supervisor-ui.${DOMAIN}`,
   session: {

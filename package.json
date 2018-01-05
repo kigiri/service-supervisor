@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/kigiri/service-supervisor/issues"
   },
-  "homepage": "https://github.com/kigiri/service-supervisor#readme"
+  "homepage": "https://github.com/kigiri/service-supervisor#readme",
+  "dependencies": {
+    "4k": "0.0.8",
+    "redis": "^2.8.0"
+  }
 }
