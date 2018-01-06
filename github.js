@@ -34,7 +34,7 @@ const oauth = {
       .replace(/\+/g, '-')
       .replace(/\//g, '-')
 
-    return db.set(`supervisor-sessions:${key}`, redirectTo, 'NX', 'EX', DAY)
+    return db.set(`supervisor-sessions:${key}`, redirectTo || '/', 'NX', 'EX', DAY)
       .then(success => success ? key : oauth.setState(res))
   },
   handler: ({ access_token: token, scope, token_type, state, error, req }) =>
