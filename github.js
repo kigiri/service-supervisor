@@ -4,6 +4,7 @@ const { c, to } = require('4k')
 const { optional } = require('4k/route-helper')
 const api = require('4k/api')
 const db = require('./redis')
+const DAY = 86400
 
 const prepareOpts = c.fast([
   use({
@@ -18,11 +19,10 @@ const v4 = query => token =>
   post(prepareOpts({ token, path: '/graphql', body: `{"query": "${query}"}` }))
 
 const getUserInfo = c([
-  v4('query { viewer { login, id, email }}'),
+  v4('query { viewer { login, id, email, fullname, avatar }}'),
   to.data.viewer,
 ])
 
-const DAY = 86400
 const oauth = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
   accessUrl: 'https://github.com/login/oauth/access_token',
@@ -71,7 +71,8 @@ const oauth = {
     ].join(' '),
   },
 }
-module.exports = {
+
+const github = module.exports = {
   v3,
   v4,
   oauth,
