@@ -19,7 +19,7 @@ const v4 = query => token =>
   post(prepareOpts({ token, path: '/graphql', body: `{"query": "${query}"}` }))
 
 const getUserInfo = c([
-  v4('query { viewer { login, id, email, fullname, avatar }}'),
+  v4('query { viewer { id email login avatarUrl name } }'),
   to.data.viewer,
 ])
 
