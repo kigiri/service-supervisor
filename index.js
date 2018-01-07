@@ -23,7 +23,7 @@ createServer(server4k({
     },
   },
   domain: `https://supervisor.${DOMAIN}`,
-  allowOrigin: `https://kigiri.github.io/supervisor`,
+  allowOrigin: `https://kigiri.github.io`,
   session: {
     options: { domain: `supervisor.${DOMAIN}`, path: '/' },
     get: required(c([
