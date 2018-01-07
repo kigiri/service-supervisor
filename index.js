@@ -8,6 +8,7 @@ const scaleway = require('./scaleway')
 const addProxy = require('./add-proxy')
 const addService = require('./add-service')
 const loadSevices = require('./load-services')
+const saveEnv = require('./save-env')
 const github = require('./github')
 const { DOMAIN, PORT } = process.env
 const db = require('./redis')
@@ -15,6 +16,16 @@ const db = require('./redis')
 createServer(server4k({
   routes: {
     OAUTH: { github: github.oauth },
+    POST: {
+      '/env': {
+        description: 'update service environement',
+        params: {
+          serviceName: required(String),
+          env: required(src => Buffer(src, 'base64')),
+        },
+        handler: saveEnv,
+      }
+    },
     GET: {
       '/services': {
         description: 'get service list',
