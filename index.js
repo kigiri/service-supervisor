@@ -20,7 +20,7 @@ createServer(server4k({
       '/env': {
         description: 'update service environement',
         params: {
-          serviceName: required(String),
+          name: required(String),
           env: required(src => Buffer(src, 'base64')),
         },
         handler: saveEnv,

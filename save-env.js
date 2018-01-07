@@ -1,4 +1,4 @@
 const { fs: { writeFile } } = require('4k')
 
-module.exports = async ({ name, env }) =>
-  await writeFile(`/service/${name}-env.json`, env, 'utf8')
+const OK = () => 'OK'
+module.exports = ({ name, env }) => writeFile(`/service/${name}-env.json`, env, 'utf8').then(OK)
