@@ -23,6 +23,12 @@ const getUserInfo = c([
   to.data.viewer,
 ])
 
+const getEmail = c([
+  v3.get.user.emails,
+  c.Array.filter(to.primary),
+  to[0].email,
+])
+
 const oauth = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
   accessUrl: 'https://github.com/login/oauth/access_token',
@@ -43,7 +49,7 @@ const oauth = {
       : getUserInfo(token)
         .then(async user => {
           const [ email, url ] = await Promise.all([
-            user.email || github.email(token),
+            user.email || getEmail(token),
             db.get(`supervisor-sessions:${state}`),
           ])
 
@@ -76,13 +82,9 @@ const github = module.exports = {
   v3,
   v4,
   oauth,
+  email: getEmail,
   login: c([
     v4('query { viewer { login }}'),
     to.data.viewer.login,
   ]),
-  email: c([
-    v3.get.user.emails,
-    c.Array.filter(to.primary),
-    to[0].email,
-  ])
 }
