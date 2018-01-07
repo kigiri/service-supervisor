@@ -2,21 +2,24 @@ const { fs: { writeFile }, child_process: { exec } } = require('4k')
 
 const proxyConf = ({ name, ip }) =>
   writeFile(`/etc/nginx/sites-enabled/${name}`, `server {
-  server_name www.${name};
-  return 301 $scheme://${name}$request_uri;
-}
-
-server {
   listen 80;
-  server_name ${name};
-  return 301 https://$server_name$request_uri;
-}
-
-server {
   listen 443;
   server_name ${name};
 
+  # clouldflare certs
+  ssl on;
+  ssl_certificate /root/ssl/cert.pem;
+  ssl_certificate_key /root/ssl/key.pem;
+
   location / {
+    add_header 'Access-Control-Allow-Origin' '*';
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+    if ($request_method = 'OPTIONS') {
+      add_header 'Access-Control-Max-Age' 1728000;
+      add_header 'Content-Type' 'text/plain; charset=utf-8';
+      add_header 'Content-Length' 0;
+      return 204;
+    }
     proxy_pass http://${ip || 'localhost'};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
