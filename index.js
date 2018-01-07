@@ -16,9 +16,9 @@ createServer(server4k({
   routes: {
     OAUTH: { github: github.oauth },
     GET: {
-      '/session': {
-        description: 'log user data',
-        handler: ({ session }) => session,
+      '/services': {
+        description: 'get service list',
+        handler: loadSevices,
       },
     },
   },
@@ -32,9 +32,9 @@ createServer(server4k({
       user => db.hget('supervisor-users', user),
       JSON.parse,
       user => {
-        console.log(user)
-        return user
-      }
+        if (user.id === 'MDQ6VXNlcjIzMTc0OA==') return user
+        throw Error(`Unknow Git User ${user.login}`)
+      },
     ])),
   },
 })).listen(PORT, () =>
