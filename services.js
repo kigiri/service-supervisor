@@ -6,12 +6,14 @@ const {
   },
   child_process: { exec },
 } = require('4k')
-const readJSON = async path => JSON.parse(await readFile(path, 'utf8'))
+const returnEmpty = () => '{}'
+const readJSON = async path => JSON.parse(await readFile(path, 'utf8')
+  .catch(returnEmpty))
 const OK = () => 'OK'
 
 const notJSON = name => !/\.json$/.test(name)
 let _services = Object.create(null)
-const readEnv = name => readJSON(`/service/${name}-env.json`).catch(() => ({}))
+const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
 const load = async () => (await Promise.all((await readdir('/service'))
   .filter(notJSON)
