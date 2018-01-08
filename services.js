@@ -1,4 +1,11 @@
-const { fs: { readdir, readFile }, child_process: { exec } } = require('4k')
+const {
+  fs: {
+    readdir,
+    readFile,
+    writeFile,
+  },
+  child_process: { exec },
+} = require('4k')
 const readJSON = async path => JSON.parse(await readFile(path, 'utf8'))
 const OK = () => 'OK'
 
