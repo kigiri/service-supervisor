@@ -30,7 +30,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=${name}
+User=${_services[name].user || name}
 WorkingDirectory=/service/${name}
 ${Object.keys(_services[name].env)
   .map(key => [ 'Environment', key, _services[name].env[key] ].join('='))
