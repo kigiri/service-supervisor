@@ -35,7 +35,7 @@ WorkingDirectory=/service/${name}
 ${Object.keys(_services[name].env)
   .map(key => [ 'Environment', key, _services[name].env[key] ].join('='))
   .join('\n')}
-ExecStart=/usr/bin/node /service/${name}/${main}
+ExecStart=/usr/bin/node /service/${name}/${_services[name].main || 'index'}
 Restart=always
 
 [Install]
@@ -74,7 +74,6 @@ module.exports = {
       readJSON(`/service/${name}/package.json`),
       npm.install(name),
     ])
-    const main = pkg.main || 'index'
     _services[name] = { ...pkg, env: {}, name }
     await Promise.all([
       createEnv(name, '{}'),
