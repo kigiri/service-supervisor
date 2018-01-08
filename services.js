@@ -66,7 +66,7 @@ const createEnv = (name, env) =>
 module.exports = {
   getServices: () => _services,
   load,
-  add: async name => {
+  add: async ({ name }) => {
     await Promise.all([
       exec(`adduser --system --no-create-home --disabled-login --group ${name}`),
       git.clone(name),
