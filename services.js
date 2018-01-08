@@ -57,6 +57,7 @@ const systemctl = {
   restart: name => exec(`systemctl restart ${name}.service`),
   start: name => exec(`systemctl start ${name}.service`),
   stop: name => exec(`systemctl stop ${name}.service`),
+  daemonReload: () => exec(`systemctl daemon-reload`),
 }
 
 const createEnv = (name, env) =>
@@ -85,7 +86,7 @@ module.exports = {
   log: ({ name, n }) => systemctl.log(name, n),
   stop: ({ name }) => systemctl.stop(name),
   start: ({ name }) => systemctl.start(name),
-  restart: ({ name }) => systemctl.restart(name),
+  restart: async ({ name }) => systemctl.restart(name),
   update: async ({ name }) => {
     await git.pull(name)
     const [ pkg ] = await Promise.all([
@@ -93,13 +94,14 @@ module.exports = {
       npm.install(name), // su ${name} -c 'cmd' # maybe ?
     ])
     _services[name] = { ...pkg, name, env: _services[name].env }
-    await systemctl.restart(name)
+    return systemctl.restart(name)
   },
   updateEnv: ({ name, env }) => {
     _services[name].env = JSON.parse(env)
-    return Promise.all([
+    await Promise.all([
       createSystemdService(name),
       createEnv(name, env),
-    ]).then(OK)
+    ])
+    return systemctl.daemonReload().then(OK)
   },
 }
