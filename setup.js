@@ -5,7 +5,7 @@ const addProxy = require('./add-proxy')
 ;(async () => {
   console.log('adding service and nginx proxy...')
   await Promise.all([
-    addProxy({ name: 'supervisor' })
+    addProxy({ name: 'supervisor.oct.ovh', port: process.env.PORT })
       .then(() => console.log('nginx proxy added')),
 
     services.add({ name: 'supervisor' })
@@ -23,3 +23,4 @@ const addProxy = require('./add-proxy')
   console.log('restarting service')
   return services.restart({ name: 'supervisor' })
 })().catch(console.error)
+
