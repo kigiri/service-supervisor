@@ -51,7 +51,7 @@ const npm = {
 const git = {
   pull: name => exec(`git -C /service/${name} pull origin master`),
   clone: name =>
-    exec(`git clone git@github.com:kigiri/service-${name}.git /service/${name}`),
+    exec(`git clone https://github.com/kigiri/service-${name}.git /service/${name}`),
 }
 
 const systemdVersion = Number(String(execSync('systemd --version'))

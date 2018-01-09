@@ -60,7 +60,6 @@ const oauth = {
             db.setex(`supervisor-sessions:${state}`, 14 * DAY, user.id),
             db.hsetnx('supervisor-users', user.id, JSON.stringify(user)),
           ])
-
           return { state, url }
         })
         .catch(err => (console.log(err), err)),
