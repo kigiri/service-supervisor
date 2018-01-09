@@ -10,6 +10,10 @@ const services = require('./services')
 const github = require('./github')
 const { DOMAIN, PORT } = process.env
 const db = require('./redis')
+const linesToJSONArray = logs =>
+  console.log(logs) ||
+  JSON.parse(`[${logs.split('\n').join(',\n')}]`)
+
 const routes = {
   OAUTH: { github: github.oauth },
   POST: {
@@ -44,7 +48,8 @@ const routes = {
     '/log': {
       description: 'update a service',
       params: { name: required(String), n: optional(Number()) },
-      handler: services.update,
+      handler: params => services.log(params)
+        .then(linesToJSONArray),
     },
   },
   GET: {
