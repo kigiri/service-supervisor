@@ -53,8 +53,19 @@ const git = {
     exec(`git clone git@github.com:kigiri/service-${name}.git /service/${name}`),
 }
 
+const outputFields = '--output-fields='+ [
+  '_BOOT_ID',
+  '_SOURCE_REALTIME_TIMESTAMP',
+  '_TRANSPORT',
+  'MESSAGE',
+  'MESSAGE_ID',
+  'PRIORITY',
+  'SYSLOG_IDENTIFIER',
+].join()
+
 const systemctl = {
-  log: (name, n=30) => exec(`journalctl -u ${name}.service -n${n} -o json`),
+  log: (name, n=30) =>
+    exec(`journalctl -u ${name}.service -n${n} -o json ${outputFields}`),
   enable: name => exec(`systemctl enable --now ${name}.service`),
   restart: name => exec(`systemctl restart ${name}.service`),
   start: name => exec(`systemctl start ${name}.service`),
