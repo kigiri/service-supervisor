@@ -1,4 +1,5 @@
 const { execSync } = require('child_process')
+const guessEnv = require('./guess-env-variables')
 const {
   fs: {
     readdir,
@@ -89,13 +90,14 @@ module.exports = {
       exec(`adduser --system --no-create-home --disabled-login --group ${name}`),
       git.clone(name),
     ])
+    const env = guessEnv(`/service/${name}`)
     const [ pkg ] = await Promise.all([
       readJSON(`/service/${name}/package.json`),
       npm.install(name),
     ])
-    _services[name] = { ...pkg, env: {}, name }
+    _services[name] = { ...pkg, env, name }
     await Promise.all([
-      createEnv(name, '{}'),
+      createEnv(name, JSON.stringify(env)),
       exec(`chown ${name}:${name} -R /service/${name}`),
       createSystemdService(name),
     ])
