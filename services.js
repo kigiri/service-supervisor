@@ -1,4 +1,4 @@
-const fs = require('fs')
+const { execSync } = require('child_process')
 const {
   fs: {
     readdir,
@@ -54,8 +54,7 @@ const git = {
     exec(`git clone git@github.com:kigiri/service-${name}.git /service/${name}`),
 }
 
-const systemdVersion = Number(String(child_process
-  .execSync('systemd --version'))
+const systemdVersion = Number(String(execSync('systemd --version'))
   .split(/systemd ([0-9]+)/)[1])
 
 const outputFields = systemdVersion >= 236 ? '--output-fields='+ [
