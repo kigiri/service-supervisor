@@ -10,9 +10,8 @@ const services = require('./services')
 const github = require('./github')
 const { DOMAIN, PORT } = process.env
 const db = require('./redis')
-const linesToJSONArray = logs =>
-  console.log(logs) ||
-  JSON.parse(`[${logs.split('\n').join(',\n')}]`)
+const linesToJSONArray = ({ stdout }) =>
+  JSON.parse(`[${stdout.trim().split('\n').join(',\n')}]`)
 
 const routes = {
   OAUTH: { github: github.oauth },
