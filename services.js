@@ -90,9 +90,9 @@ module.exports = {
       exec(`adduser --system --no-create-home --disabled-login --group ${name}`),
       git.clone(name),
     ])
-    const env = guessEnv(`/service/${name}`)
-    const [ pkg ] = await Promise.all([
+    const [ pkg, env ] = await Promise.all([
       readJSON(`/service/${name}/package.json`),
+      guessEnv(`/service/${name}`),
       npm.install(name),
     ])
     _services[name] = { ...pkg, env, name }
