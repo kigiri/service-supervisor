@@ -27,7 +27,7 @@ const load = async () => (await Promise.all((await readdir('/service'))
 
 const createSystemdService = name =>
   writeFile(`/etc/systemd/system/${name}.service`, `[Unit]
-Description=My ${name[0].toUpperCase()+ name.slice(1)} Service
+Description=${_services[name].description || ('My '+ name +' Service')}
 After=network.target
 
 [Service]
@@ -88,7 +88,7 @@ module.exports = {
   log: ({ name, n }) => systemctl.log(name, n),
   stop: ({ name }) => systemctl.stop(name),
   start: ({ name }) => systemctl.start(name),
-  restart: async ({ name }) => systemctl.restart(name),
+  restart: ({ name }) => systemctl.restart(name),
   update: async ({ name }) => {
     await git.pull(name)
     const [ pkg ] = await Promise.all([
@@ -96,9 +96,11 @@ module.exports = {
       npm.install(name), // su ${name} -c 'cmd' # maybe ?
     ])
     _services[name] = { ...pkg, name, env: _services[name].env }
+    await createSystemdService(name)
+    await systemctl.daemonReload()
     return systemctl.restart(name)
   },
-  updateEnv: ({ name, env }) => {
+  updateEnv: async ({ name, env }) => {
     _services[name].env = JSON.parse(env)
     await Promise.all([
       createSystemdService(name),

@@ -3,7 +3,7 @@
 const { createServer } = require('http')
 const { c } = require('4k')
 const server4k = require('4k/server')
-const { required } = require('4k/route-helper')
+const { required, optional } = require('4k/route-helper')
 // const scaleway = require('./scaleway')
 // const addProxy = require('./add-proxy')
 const services = require('./services')
@@ -23,12 +23,29 @@ const routes = {
     },
     '/service': {
       description: 'add a service',
-      params: {
-        name: required(String),
-        repo: required(String),
-      },
+      params: { name: required(String), repo: required(String) },
       handler: services.add,
-    }
+    },
+    '/restart': {
+      description: 'restart a service',
+      params: { name: required(String) },
+      handler: services.restart,
+    },
+    '/stop': {
+      description: 'stop a service',
+      params: { name: required(String) },
+      handler: services.stop,
+    },
+    '/update': {
+      description: 'update a service',
+      params: { name: required(String) },
+      handler: services.update,
+    },
+    '/log': {
+      description: 'update a service',
+      params: { name: required(String), n: optional(Number()) },
+      handler: services.update,
+    },
   },
   GET: {
     '/services': {
