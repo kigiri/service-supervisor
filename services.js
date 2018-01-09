@@ -1,3 +1,4 @@
+const fs = require('fs')
 const {
   fs: {
     readdir,
@@ -53,7 +54,11 @@ const git = {
     exec(`git clone git@github.com:kigiri/service-${name}.git /service/${name}`),
 }
 
-const outputFields = '--output-fields='+ [
+const systemdVersion = Number(String(child_process
+  .execSync('systemd --version'))
+  .split(/systemd ([0-9]+)/)[1])
+
+const outputFields = systemdVersion >= 236 ? '--output-fields='+ [
   '_BOOT_ID',
   '_SOURCE_REALTIME_TIMESTAMP',
   '_TRANSPORT',
@@ -61,9 +66,10 @@ const outputFields = '--output-fields='+ [
   'MESSAGE_ID',
   'PRIORITY',
   'SYSLOG_IDENTIFIER',
-].join()
+].join() : ''
 
 const systemctl = {
+  version: systemdVersion,
   log: (name, n=30) =>
     exec(`journalctl -u ${name}.service -n${n} -o json ${outputFields}`),
   enable: name => exec(`systemctl enable --now ${name}.service`),
