@@ -21,7 +21,7 @@ const routes = {
       },
       handler: services.updateEnv,
     },
-    '/service': {
+    '/add': {
       description: 'add a service',
       params: { name: required(String), repo: required(String) },
       handler: services.add,
