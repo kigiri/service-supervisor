@@ -11,7 +11,7 @@ const addProxy = require('./add-proxy')
     services.add({ name: 'supervisor' })
       .then(() => console.log('service enabled')),
   ])
-  const { stdout } await exec(`node -e `
+  const { stdout } = await exec(`node -e `
     +`"console.log(JSON.stringify(Object.keys(process.env)))"`)
   const blacklist = new Set(JSON.parse(stdout))
   const env = JSON.stringify(Object.keys(process.env)
