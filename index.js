@@ -66,7 +66,7 @@ services.load()
     process.exit(1)
   })
   .then(() => {
-    const server = createServer(server4k({
+    const reqHandler = server4k({
       routes,
       domain: `https://supervisor.${DOMAIN}`,
       allowOrigin: `https://kigiri.github.io`,
@@ -83,11 +83,14 @@ services.load()
           },
         ])),
       },
-    })).listen(PORT, () =>
+    })
+    const server = createServer(reqHandler).listen(PORT, () =>
       console.info(`server started: http://localhost:${PORT}`))
     const wss = new WebSocketServer({ server })
-    wss.on('connection', connection (ws, req) => {
-      console.log(req.headers)
+    console.log('starting websockets...')
+    wss.on('connection', async ws => {
+      const session = await reqHandler.session(ws.upgradeReq)
+      console.log('new websocket user', session)
       // You might use location.query.access_token to authenticate or share sessions
       // or req.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
 
