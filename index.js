@@ -1,6 +1,7 @@
 'use strict'
 
 const { createServer } = require('http')
+const { Server: WebSocketServer } = require('uws')
 const { c } = require('4k')
 const server4k = require('4k/server')
 const { required, optional } = require('4k/route-helper')
@@ -59,29 +60,44 @@ const routes = {
   },
 }
 
-services.load().then(() => createServer(server4k({
-  routes,
-  domain: `https://supervisor.${DOMAIN}`,
-  allowOrigin: `https://kigiri.github.io`,
-  session: {
-    options: { domain: `supervisor.${DOMAIN}`, path: '/' },
-    get: required(c([
-      key => `supervisor-sessions:${key}`,
-      db.get,
-      user => db.hget('supervisor-users', user),
-      JSON.parse,
-      user => {
-        if (user.id === 'MDQ6VXNlcjIzMTc0OA==') return user
-        throw Error(`Unknow Git User ${user.login}`)
+services.load()
+  .catch(err => {
+    console.error('error loading services', err)
+    process.exit(1)
+  })
+  .then(() => {
+    const server = createServer(server4k({
+      routes,
+      domain: `https://supervisor.${DOMAIN}`,
+      allowOrigin: `https://kigiri.github.io`,
+      session: {
+        options: { domain: `supervisor.${DOMAIN}`, path: '/' },
+        get: required(c([
+          key => `supervisor-sessions:${key}`,
+          db.get,
+          user => db.hget('supervisor-users', user),
+          JSON.parse,
+          user => {
+            if (user.id === 'MDQ6VXNlcjIzMTc0OA==') return user
+            throw Error(`Unknow Git User ${user.login}`)
+          },
+        ])),
       },
-    ])),
-  },
-})).listen(PORT, () =>
-  console.info(`server started: http://localhost:${PORT}`)))
-.catch(err => {
-  console.error('error loading services', err)
-  process.exit(1)
-})
+    })).listen(PORT, () =>
+      console.info(`server started: http://localhost:${PORT}`))
+    const wss = new WebSocketServer({ server })
+    wss.on('connection', connection (ws, req) => {
+      console.log(req.headers)
+      // You might use location.query.access_token to authenticate or share sessions
+      // or req.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
+
+      ws.on('message', function incoming(message) {
+        console.log('received: %s', message)
+      })
+      ws.send('something')
+    })
+  })
+
 
 module.exports = (async () => {
   /*

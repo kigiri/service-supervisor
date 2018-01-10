@@ -1,13 +1,11 @@
 const { fs: { writeFile }, child_process: { exec } } = require('4k')
 
-const proxyConf = ({ name, ip }) =>
+const proxyConf = ({ name, ip, port }) =>
   writeFile(`/etc/nginx/sites-enabled/${name}`, `server {
   listen 80;
-  listen 443;
+  listen 443 default ssl;
   server_name ${name};
 
-  # clouldflare certs
-  ssl on;
   ssl_certificate /root/ssl/cert.pem;
   ssl_certificate_key /root/ssl/key.pem;
 
@@ -20,7 +18,7 @@ const proxyConf = ({ name, ip }) =>
       add_header 'Content-Length' 0;
       return 204;
     }
-    proxy_pass http://${ip || 'localhost'};
+    proxy_pass http://${ip || ('localhost:'+ port)};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header Connection "upgrade";
