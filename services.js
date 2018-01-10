@@ -82,6 +82,11 @@ const systemctl = {
 const createEnv = (name, env) =>
   writeFile(`/service/${name}-env.json`, env, 'utf8')
 
+const checkName = name => {
+  if (name in _services) return name
+  throw Error(`Service ${name} not found`)
+}
+
 module.exports = {
   getServices: () => _services,
   load,
@@ -103,11 +108,30 @@ module.exports = {
     ])
     return systemctl.enable(name)
   },
-  log: ({ name, n }) => systemctl.log(name, n),
-  stop: ({ name }) => systemctl.stop(name),
-  start: ({ name }) => systemctl.start(name),
-  restart: ({ name }) => systemctl.restart(name),
+  sub: ({ data: name, ws }) => {
+    try { checkName(name) } catch (err) { return console.error(err) }
+    if (ws.logger && ws.logger.serviceName === name) return
+    ws.logger = spawn('journalctl', [
+      `-u${name}.service`,
+      '-ojson',
+      '-n50',
+      '-f',
+    ])
+    ws.logger.serviceName = name
+    ws.logger.stdout.on('data', data => {
+      const lines = data.toString('utf8').split('\n')
+      for (let l of lines) {
+        ws.send(l)
+      }
+    })
+  },
+  unsub: ({ ws }) => ws.logger && (ws.logger.kill(), ws.logger = undefined),
+  log: ({ name, n }) => systemctl.log(checkName(name), n),
+  stop: ({ name }) => systemctl.stop(checkName(name)),
+  start: ({ name }) => systemctl.start(checkName(name)),
+  restart: ({ name }) => systemctl.restart(checkName(name)),
   update: async ({ name }) => {
+    checkName(name)
     await git.pull(name)
     const [ pkg ] = await Promise.all([
       readPkg(name),
@@ -119,6 +143,7 @@ module.exports = {
     return systemctl.restart(name)
   },
   updateEnv: async ({ name, env }) => {
+    checkName(name)
     _services[name].env = JSON.parse(env)
     await Promise.all([
       createSystemdService(name),

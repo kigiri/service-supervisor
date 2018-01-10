@@ -90,14 +90,14 @@ services.load()
     console.log('starting websockets...')
     wss.on('connection', async ws => {
       const session = await reqHandler.session(ws.upgradeReq)
-      console.log('new websocket user', session)
-      // You might use location.query.access_token to authenticate or share sessions
-      // or req.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
+      if (!session || !session.token) return ws.close(1000, 'Unauthorized')
 
-      ws.on('message', function incoming(message) {
-        console.log('received: %s', message)
+      ws.on('message', message => {
+        const [ action, data ] = message.split(':')
+        const handler = service[action]
+        if (typeof handler !== 'function') return
+        handler({ data, ws })
       })
-      ws.send('something')
     })
   })
 
