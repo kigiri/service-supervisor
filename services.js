@@ -118,12 +118,7 @@ module.exports = {
       '-f',
     ])
     ws.logger.serviceName = name
-    ws.logger.stdout.on('data', data => {
-      const lines = data.toString('utf8').split('\n')
-      for (let l of lines) {
-        ws.send(l)
-      }
-    })
+    ws.logger.stdout.on('data', data => ws.send(data))
   },
   unsub: ({ ws }) => ws.logger && (ws.logger.kill(), ws.logger = undefined),
   log: ({ name, n }) => systemctl.log(checkName(name), n),
