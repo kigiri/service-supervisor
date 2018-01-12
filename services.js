@@ -1,4 +1,4 @@
-const { execSync } = require('child_process')
+const { execSync, spawn } = require('child_process')
 const guessEnv = require('./guess-env-variables')
 const {
   fs: {
@@ -111,6 +111,7 @@ module.exports = {
   sub: ({ data: name, ws }) => {
     try { checkName(name) } catch (err) { return console.error(err) }
     if (ws.logger && ws.logger.serviceName === name) return
+    ws.logger && ws.logger.kill()
     ws.logger = spawn('journalctl', [
       `-u${name}.service`,
       '-ojson',

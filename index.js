@@ -94,7 +94,7 @@ services.load()
 
       ws.on('message', message => {
         const [ action, data ] = message.split(':')
-        const handler = service[action]
+        const handler = services[action]
         if (typeof handler !== 'function') return
         handler({ data, ws })
       })
