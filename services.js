@@ -57,10 +57,14 @@ statusEvent.start = () => {
   logger.stdout.on('data', data => {
     const log = JSON.parse(data)
     if (!isDoneStatus(log)) return
-    const name = log.UNIT.slice(0, 10)
-    const key = log.MESSAGE.split(' ')[0].toLowerCase()
-    const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
-    statusEvent.emit(JSON.stringify({ status: true, name, key, time }))
+    try {
+      const name = log.UNIT.slice(0, 10)
+      const key = log.MESSAGE.split(' ')[0].toLowerCase()
+      const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
+      statusEvent.emit(JSON.stringify({ status: true, name, key, time }))
+    } catch (err) {
+      console.log('parse failed', err)
+    }
   })
   logger.on('close', statusEvent.start)
 }
