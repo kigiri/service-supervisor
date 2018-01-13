@@ -66,6 +66,7 @@ services.load()
     process.exit(1)
   })
   .then(() => {
+    services.statusEvent.start()
     const reqHandler = server4k({
       routes,
       domain: `https://supervisor.${DOMAIN}`,
@@ -91,12 +92,13 @@ services.load()
     wss.on('connection', async ws => {
       const session = await reqHandler.session(ws.upgradeReq)
       if (!session || !session.token) return ws.close(1000, 'Unauthorized')
-
+      const send = data => ws.send(data)
+      services.statusEvent.on('data', send)
       ws.on('message', message => {
         const [ action, data ] = message.split(':')
         const handler = services[action]
         if (typeof handler !== 'function') return
-        handler({ data, ws })
+        handler({ data, ws, send })
       })
     })
   })

@@ -1,5 +1,6 @@
 const { execSync, spawn } = require('child_process')
 const guessEnv = require('./guess-env-variables')
+const EventEmitter = require('events')
 const {
   fs: {
     readdir,
@@ -47,6 +48,21 @@ const load = async () => (await Promise.all((await readdir('/service'))
     status,
     port: port.trim(),
   }, acc), _services)
+
+const statusEvent = new EventEmitter
+statusEvent.start = () => {
+  console.log('subscribing to systemd events')
+  const logger = spawn('journalctl', [ '-tsystemd', '-ojson', '-f' ])
+  logger.stdout.on('data', data => {
+    const log = JSON.parse(data)
+    if (!isDoneStatus(log)) return
+    const name = log.UNIT.slice(0, 10)
+    const key = log.MESSAGE.split(' ')[0].toLowerCase()
+    _services[name].status[key] = time
+    statusEvent.emit(JSON.stringify({ status: true, name, key, time }))
+  })
+  logger.on('close', statusEvent.start)
+}
 
 const createSystemdService = name =>
   writeFile(`/etc/systemd/system/${name}.service`, `[Unit]
@@ -123,6 +139,7 @@ const getUsedPortsCmd = 'ss -ltpn | tail -n +2 | cut -d":" -f2 | cut -d" " -f1'
 module.exports = {
   getServices: () => _services,
   load,
+  statusEvent,
   add: async ({ name }) => {
     await Promise.all([
       exec(`adduser --system --no-create-home --disabled-login --group ${name}`),
@@ -149,7 +166,7 @@ module.exports = {
     ])
     return systemctl.enable(name)
   },
-  sub: ({ data: name, ws }) => {
+  sub: ({ data: name, ws, send }) => {
     try { checkName(name) } catch (err) { return console.error(err) }
     if (ws.logger && ws.logger.serviceName === name) return
     ws.logger && ws.logger.kill()
@@ -162,7 +179,7 @@ module.exports = {
       outputFields,
     ].filter(Boolean))
     ws.logger.serviceName = name
-    ws.logger.stdout.on('data', data => ws.send(data))
+    ws.logger.stdout.on('data', send)
   },
   unsub: ({ ws }) => ws.logger && (ws.logger.kill(), ws.logger = undefined),
   log: ({ name, n }) => systemctl.log(checkName(name), n),
