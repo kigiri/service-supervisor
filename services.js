@@ -17,6 +17,20 @@ const notConfFile = name => !/\.(json|port)$/.test(name)
 const _services = Object.create(null)
 const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
+const isDoneStatus = log => log.RESULT === 'done'
+  && log.CODE_FUNCTION === 'job_log_status_message'
+const parseStatusLogs = (acc, log) => {
+  const key = log.MESSAGE.split(' ')[0].toLowerCase()
+  acc[key] || (acc[key] = log.__REALTIME_TIMESTAMP)
+  return acc
+}
+const parseSystemd = async name =>
+  (await exec(`journalctl -tsystemd -u${name}.service -n20 -ojson`)).stdout
+  .split('\n')
+  .map(JSON.parse)
+  .filter(isDoneStatus)
+  .reduceRight(parseStatusLogs, {})
+
 const load = async () => (await Promise.all((await readdir('/service'))
   .filter(notConfFile)
   .map(name => Promise.all([
@@ -24,9 +38,15 @@ const load = async () => (await Promise.all((await readdir('/service'))
     readEnv(name),
     name,
     readFile(`/service/${name}.port`, 'utf8'),
+    parseSystemd(name),
   ]))))
-  .reduce((acc, [ pkg, env, name, port ]) =>
-    (acc[name] = { ...pkg, env, name, port }, acc), _services)
+  .reduce((acc, [ pkg, env, name, port, status ]) => (acc[name] = {
+    ...pkg,
+    env,
+    name,
+    status,
+    port: port.trim(),
+  }, acc), _services)
 
 const createSystemdService = name =>
   writeFile(`/etc/systemd/system/${name}.service`, `[Unit]
@@ -74,7 +94,7 @@ const outputFields = systemdVersion >= 236 ? '--output-fields='+ [
 const systemctl = {
   version: systemdVersion,
   log: (name, n=30) =>
-    exec(`journalctl -u ${name}.service -n${n} -o json ${outputFields}`),
+    exec(`journalctl -tnode -u${name}.service -n${n} -ojson ${outputFields}`),
   enable: name => exec(`systemctl enable --now ${name}.service`),
   restart: name => exec(`systemctl restart ${name}.service`),
   start: name => exec(`systemctl start ${name}.service`),
@@ -134,11 +154,13 @@ module.exports = {
     if (ws.logger && ws.logger.serviceName === name) return
     ws.logger && ws.logger.kill()
     ws.logger = spawn('journalctl', [
+      '-tnode',
       `-u${name}.service`,
       '-ojson',
       '-n50',
       '-f',
-    ])
+      outputFields,
+    ].filter(Boolean))
     ws.logger.serviceName = name
     ws.logger.stdout.on('data', data => ws.send(data))
   },

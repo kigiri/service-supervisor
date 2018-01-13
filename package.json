@@ -1,7 +1,8 @@
 {
   "name": "service-supervisor",
   "version": "1.0.0",
-  "description": "supervise services",
+  "description": "Deploy, test and configure services",
+  "icon": "settings",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,6 +19,10 @@
     "url": "https://github.com/kigiri/service-supervisor/issues"
   },
   "homepage": "https://github.com/kigiri/service-supervisor#readme",
+  "debianDependencies": [
+    "redis-server",
+    "nginx"
+  ],
   "dependencies": {
     "4k": "0.0.9",
     "redis": "^2.8.0",
