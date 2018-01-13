@@ -13,12 +13,12 @@ const readJSON = async path => JSON.parse(await readFile(path, 'utf8')
   .catch(returnEmpty))
 const OK = () => 'OK'
 
-const notJSON = name => !/\.json$/.test(name)
+const notConfFile = name => !/\.(json|port)$/.test(name)
 const _services = Object.create(null)
 const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
 const load = async () => (await Promise.all((await readdir('/service'))
-  .filter(notJSON)
+  .filter(notConfFile)
   .map(name => Promise.all([
     readPkg(name),
     readEnv(name),
