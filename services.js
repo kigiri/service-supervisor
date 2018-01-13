@@ -53,7 +53,7 @@ const load = async () => (await Promise.all((await readdir('/service'))
 const statusEvent = new EventEmitter
 statusEvent.start = () => {
   console.log('subscribing to systemd events')
-  const logger = spawn('journalctl', [ '-tsystemd', '-ojson', '-f' ])
+  const logger = spawn('journalctl', [ '-tsystemd', '-ojson', '-n0' '-f' ])
   logger.stdout.on('data', data => {
     const log = JSON.parse(data)
     if (!isDoneStatus(log)) return
