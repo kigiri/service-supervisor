@@ -14,7 +14,7 @@ const readJSON = async path => JSON.parse(await readFile(path, 'utf8')
 const OK = () => 'OK'
 
 const notJSON = name => !/\.json$/.test(name)
-let _services = Object.create(null)
+const _services = Object.create(null)
 const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
 const load = async () => (await Promise.all((await readdir('/service'))
@@ -23,9 +23,10 @@ const load = async () => (await Promise.all((await readdir('/service'))
     readPkg(name),
     readEnv(name),
     name,
+    readFile(`/service/${name}.port`, 'utf8'),
   ]))))
-  .reduce((acc, [ pkg, env, name ]) =>
-    (acc[name] = { ...pkg, env, name }, acc), _services = Object.create(null))
+  .reduce((acc, [ pkg, env, name, port ]) =>
+    (acc[name] = { ...pkg, env, name, port }, acc), _services)
 
 const createSystemdService = name =>
   writeFile(`/etc/systemd/system/${name}.service`, `[Unit]
@@ -39,7 +40,9 @@ WorkingDirectory=/service/${name}
 ${Object.keys(_services[name].env)
   .map(key => [ 'Environment', key, _services[name].env[key] ].join('='))
   .join('\n')}
-ExecStart=/usr/bin/node /service/${name}/${_services[name].main || 'index'}
+${[ name ].concat(_services[name].service || []).map(key =>
+  `Environment=SERVICE_${key.toUpperCase()}_PORT=${_services[key].port}`)}
+ExecStart=/usr/bin/node /service/${key}/${_services[key].main || 'index'}
 Restart=always
 
 [Install]
@@ -82,10 +85,20 @@ const systemctl = {
 const createEnv = (name, env) =>
   writeFile(`/service/${name}-env.json`, env, 'utf8')
 
+const generatePort = usedPorts => {
+  const port = String(Math.random()).split(/([1-9][0-9]{3})/)[1]
+
+  return usedPorts.includes(port)
+    ? generatePort(usedPorts)
+    : port
+}
+
 const checkName = name => {
   if (name in _services) return name
   throw Error(`Service ${name} not found`)
 }
+
+const getUsedPortsCmd = 'ss -ltpn | tail -n +2 | cut -d":" -f2 | cut -d" " -f1'
 
 module.exports = {
   getServices: () => _services,
@@ -95,14 +108,22 @@ module.exports = {
       exec(`adduser --system --no-create-home --disabled-login --group ${name}`),
       git.clone(name),
     ])
-    const [ pkg, env ] = await Promise.all([
+    const [ pkg, env, usedPorts ] = await Promise.all([
       readJSON(`/service/${name}/package.json`),
       guessEnv(`/service/${name}`),
+      exec(getUsedPortsCmd),
       npm.install(name),
     ])
-    _services[name] = { ...pkg, env, name }
+
+    const reservedPorts = Object.keys(_services)
+      .map(key => String(_services[key].port))
+
+    const port = generatePort(usedPorts.concat(reservedPorts))
+
+    _services[name] = { ...pkg, env, name, port }
     await Promise.all([
       createEnv(name, JSON.stringify(env)),
+      writeFile(`/service/${name}.port`, port),
       exec(`chown ${name}:${name} -R /service/${name}`),
       createSystemdService(name),
     ])
