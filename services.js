@@ -28,6 +28,7 @@ const parseStatusLogs = (acc, log) => {
 const parseSystemd = async name =>
   (await exec(`journalctl -tsystemd -u${name}.service -n20 -ojson`)).stdout
   .split('\n')
+  .filter(Boolean)
   .map(JSON.parse)
   .filter(isDoneStatus)
   .reduceRight(parseStatusLogs, {})
@@ -58,7 +59,7 @@ statusEvent.start = () => {
     if (!isDoneStatus(log)) return
     const name = log.UNIT.slice(0, 10)
     const key = log.MESSAGE.split(' ')[0].toLowerCase()
-    _services[name].status[key] = time
+    const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
     statusEvent.emit(JSON.stringify({ status: true, name, key, time }))
   })
   logger.on('close', statusEvent.start)
