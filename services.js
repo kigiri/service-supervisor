@@ -53,15 +53,23 @@ const load = async () => (await Promise.all((await readdir('/service'))
 const statusEvent = new EventEmitter
 statusEvent.start = () => {
   console.log('subscribing to systemd events')
-  const logger = spawn('journalctl', [ '-tsystemd', '-ojson', '-n0' '-f' ])
+  statusEvent.logger && statusEvent.logger.kill()
+  statusEvent.logger = spawn('journalctl', [
+    '-tsystemd',
+    '-ojson',
+    '-n0',
+    '-f',
+    ].concat(Object.keys(_services).map(k => `-u${k}`)))
   logger.stdout.on('data', data => {
-    const log = JSON.parse(data)
-    if (!isDoneStatus(log)) return
     try {
+      const log = JSON.parse(data)
+      if (!isDoneStatus(log)) return
       const name = log.UNIT.slice(0, 10)
       const key = log.MESSAGE.split(' ')[0].toLowerCase()
+      if (!_services[name]) return
       const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
-      statusEvent.emit(JSON.stringify({ status: true, name, key, time }))
+      statusEvent
+        .emit(`{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
     } catch (err) {
       console.log('parse failed', err)
     }
