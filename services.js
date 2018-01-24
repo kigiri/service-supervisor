@@ -2,11 +2,7 @@ const { execSync, spawn } = require('child_process')
 const guessEnv = require('./guess-env-variables')
 const EventEmitter = require('events')
 const {
-  fs: {
-    readdir,
-    readFile,
-    writeFile,
-  },
+  fs: { readdir, readFile, writeFile },
   child_process: { exec },
 } = require('4k')
 const returnEmpty = () => '{}'
@@ -54,7 +50,7 @@ const statusEvent = new EventEmitter
 statusEvent.start = () => {
   console.log('subscribing to systemd events')
   statusEvent.logger && statusEvent.logger.kill()
-  statusEvent.logger = spawn('journalctl', [
+  const logger = statusEvent.logger = spawn('journalctl', [
     '-tsystemd',
     '-ojson',
     '-n0',

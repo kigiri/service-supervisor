@@ -93,13 +93,16 @@ services.load()
       const session = await reqHandler.session(ws.upgradeReq)
       if (!session || !session.token) return ws.close(1000, 'Unauthorized')
       const send = data => ws.send(data)
-      services.statusEvent.on('data', send)
+
       ws.on('message', message => {
-        const [ action, data ] = message.split(':')
-        const handler = services[action]
+        const delimitorIndex = message.indexOf(':')
+        const handler = services[message.slice(0, delimitorIndex)]
         if (typeof handler !== 'function') return
-        handler({ data, ws, send })
+        handler({ data: message.slice(delimitorIndex + 1), ws, send })
       })
+
+      ws.on('open', () => services.statusEvent.on('data', send))
+      ws.on('close', () => services.statusEvent.removeListener('data', send))
     })
   })
 
