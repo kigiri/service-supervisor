@@ -99,7 +99,7 @@ services.load()
         services.statusEvent.on('data', send)
       }
       ws.onclose = () => services.statusEvent.removeListener('data', send)
-      ws.onmessage = message => {
+      ws.onmessage = ({ data: message }) => {
         const delimitorIndex = message.indexOf(':')
         const handler = services[message.slice(0, delimitorIndex)]
         if (typeof handler !== 'function') return
