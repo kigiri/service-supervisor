@@ -91,7 +91,7 @@ ${Object.keys(_services[name].env)
   .join('\n')}
 ${[ name ].concat(_services[name].service || []).map(key =>
   `Environment=SERVICE_${key.toUpperCase()}_PORT=${_services[key].port}`)}
-ExecStart=/usr/bin/node /service/${key}/${_services[key].main || 'index'}
+ExecStart=/usr/bin/node /service/${name}/${_services[name].main || 'index'}
 Restart=always
 
 [Install]
