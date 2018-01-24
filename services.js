@@ -16,7 +16,6 @@ const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
 const isDoneStatus = log => log.RESULT === 'done'
   && log.CODE_FUNCTION === 'job_log_status_message'
-{ "__CURSOR" : "s=faadba1e1a00494292c6383af1973c4f;i=65be2;b=933262a1a76d466d88a27b53f8fdfa5f;m=1299f1f74d8;t=5638286f1d9aa;x=fa23015888ab1c85", "__REALTIME_TIMESTAMP" : "1516787144448426", "__MONOTONIC_TIMESTAMP" : "1278274925784", "_BOOT_ID" : "933262a1a76d466d88a27b53f8fdfa5f", "PRIORITY" : "6", "SYSLOG_FACILITY" : "3", "_MACHINE_ID" : "f437e0a4b581a2fe123cd5f35a54d4ab", "_HOSTNAME" : "head", "_UID" : "0", "_GID" : "0", "_CAP_EFFECTIVE" : "3fffffffff", "SYSLOG_IDENTIFIER" : "systemd", "UNIT" : "db.service", "_TRANSPORT" : "journal", "_PID" : "1", "_COMM" : "systemd", "_EXE" : "/lib/systemd/systemd", "_CMDLINE" : "/lib/systemd/systemd --system --deserialize 23", "_SYSTEMD_CGROUP" : "/init.scope", "_SYSTEMD_UNIT" : "init.scope", "_SYSTEMD_SLICE" : "-.slice", "CODE_FILE" : "../src/core/job.c", "CODE_LINE" : "804", "CODE_FUNCTION" : "job_log_status_message", "MESSAGE_ID" : "9d1aaa27d60140bd96365438aad20286", "MESSAGE" : "Stopped My db Service.", "RESULT" : "done", "_SOURCE_REALTIME_TIMESTAMP" : "1516787144448381" }
 const parseStatusLogs = (acc, log) => {
   const key = log.MESSAGE.split(' ')[0].toLowerCase()
   acc[key] || (acc[key] = log.__REALTIME_TIMESTAMP)
@@ -58,8 +57,8 @@ const sendLog = data => {
     if (!_services[name]) return
     const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
     console.log({ name, key, time })
-    statusEvent
-      .emit(`{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
+    statusEvent.emit('data',
+      `{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
   } catch (err) {
     console.log('parse failed', err, data)
   }
@@ -74,11 +73,7 @@ statusEvent.start = () => {
     '-n0',
     '-f',
     ].concat(Object.keys(_services).map(k => `-u${k}`)))
-  logger.stdout.on('data', data => {
-    const logs = String(data).split('\n')
-    console.log(logs.lenght, 'recieved')
-    logs.forEach(sendLog)
-  })
+  logger.stdout.on('data', data => String(data).split('\n').forEach(sendLog))
   logger.on('close', statusEvent.start)
 }
 
