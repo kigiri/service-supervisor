@@ -94,15 +94,17 @@ services.load()
       if (!session || !session.token) return ws.close(1000, 'Unauthorized')
       const send = data => ws.send(data)
 
-      ws.on('message', message => {
+      ws.onopen = () => {
+        console.log('New connection open !')
+        services.statusEvent.on('data', send)
+      }
+      ws.onclose = () => services.statusEvent.removeListener('data', send)
+      ws.onmessage = message => {
         const delimitorIndex = message.indexOf(':')
         const handler = services[message.slice(0, delimitorIndex)]
         if (typeof handler !== 'function') return
         handler({ data: message.slice(delimitorIndex + 1), ws, send })
-      })
-
-      ws.on('open', () => services.statusEvent.on('data', send))
-      ws.on('close', () => services.statusEvent.removeListener('data', send))
+      }
     })
   })
 

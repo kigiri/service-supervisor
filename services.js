@@ -98,6 +98,7 @@ const npm = {
 }
 
 const git = {
+  stash: name => exec(`git -C /service/${name} stash`),
   pull: name => exec(`git -C /service/${name} pull origin master`),
   clone: name =>
     exec(`git clone https://github.com/kigiri/service-${name}.git /service/${name}`),
@@ -197,6 +198,7 @@ module.exports = {
   restart: ({ name }) => systemctl.restart(checkName(name)),
   update: async ({ name }) => {
     checkName(name)
+    await git.stash(name)
     await git.pull(name)
     const [ pkg ] = await Promise.all([
       readPkg(name),
