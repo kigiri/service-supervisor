@@ -47,9 +47,26 @@ const load = async () => (await Promise.all((await readdir('/service'))
   }, acc), _services)
 
 const statusEvent = new EventEmitter
+const sendLog = data => {
+  if (!data) return
+  try {
+    const log = JSON.parse(data)
+    if (!isDoneStatus(log)) return
+    const name = log.UNIT.slice(0, 10)
+    const key = log.MESSAGE.split(' ')[0].toLowerCase()
+    if (!_services[name]) return
+    const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
+    console.log({ name, key, time })
+    statusEvent
+      .emit(`{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
+  } catch (err) {
+    console.log('parse failed', err, data)
+  }
+}
 statusEvent.start = () => {
   console.log('subscribing to systemd events')
   statusEvent.logger && statusEvent.logger.kill()
+  console.log('listenning to', Object.keys(_services).map(k => `-u${k}`))
   const logger = statusEvent.logger = spawn('journalctl', [
     '-tsystemd',
     '-ojson',
@@ -57,18 +74,7 @@ statusEvent.start = () => {
     '-f',
     ].concat(Object.keys(_services).map(k => `-u${k}`)))
   logger.stdout.on('data', data => {
-    try {
-      const log = JSON.parse(data)
-      if (!isDoneStatus(log)) return
-      const name = log.UNIT.slice(0, 10)
-      const key = log.MESSAGE.split(' ')[0].toLowerCase()
-      if (!_services[name]) return
-      const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
-      statusEvent
-        .emit(`{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
-    } catch (err) {
-      console.log('parse failed', err)
-    }
+    String(data).split('\n').forEach(sendLog)
   })
   logger.on('close', statusEvent.start)
 }
@@ -167,7 +173,8 @@ module.exports = {
 
     const port = generatePort(usedPorts.concat(reservedPorts))
 
-    _services[name] = { ...pkg, env, name, port }
+    _services[name] = { ...pkg, env, name, port, status: {} }
+    statusEvent.start()
     await Promise.all([
       createEnv(name, JSON.stringify(env)),
       writeFile(`/service/${name}.port`, port),
