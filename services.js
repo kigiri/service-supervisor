@@ -42,7 +42,7 @@ const load = async () => (await Promise.all((await readdir('/service'))
     ...pkg,
     env,
     name,
-    status,
+    ...status,
     port: port.trim(),
   }, acc), _services)
 
@@ -55,7 +55,7 @@ const sendLog = data => {
     const name = log.UNIT.slice(0, -8)
     const key = log.MESSAGE.split(' ')[0].toLowerCase()
     if (!_services[name]) return
-    const time = _services[name].status[key] = log.__REALTIME_TIMESTAMP
+    const time = _services[name][key] = log.__REALTIME_TIMESTAMP
     console.log({ name, key, time })
     statusEvent.emit('data',
       `{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
@@ -171,7 +171,7 @@ module.exports = {
 
     const port = generatePort(usedPorts.concat(reservedPorts))
 
-    _services[name] = { ...pkg, env, name, port, status: {} }
+    _services[name] = { ...pkg, env, name, port }
     statusEvent.start()
     await Promise.all([
       createEnv(name, JSON.stringify(env)),

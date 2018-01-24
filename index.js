@@ -94,10 +94,7 @@ services.load()
       if (!session || !session.token) return ws.close(1000, 'Unauthorized')
       const send = data => ws.send(data)
 
-      ws.onopen = () => {
-        console.log('New connection open !')
-        services.statusEvent.on('data', send)
-      }
+      services.statusEvent.on('data', send)
       ws.onclose = () => services.statusEvent.removeListener('data', send)
       ws.onmessage = ({ data: message }) => {
         const delimitorIndex = message.indexOf(':')
