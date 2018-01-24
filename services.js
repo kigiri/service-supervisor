@@ -205,11 +205,12 @@ module.exports = {
     checkName(name)
     await git.stash(name)
     await git.pull(name)
-    const [ pkg ] = await Promise.all([
+    const [ pkg, port ] = await Promise.all([
       readPkg(name),
+      readFile(`/service/${name}.port`, 'utf8'),
       npm.install(name), // su ${name} -c 'cmd' # maybe ?
     ])
-    _services[name] = { ...pkg, name, env: _services[name].env }
+    Object.assign(_services[name], pkg, { name, port: port.trim() })
     await createSystemdService(name)
     await systemctl.daemonReload()
     return systemctl.restart(name)
