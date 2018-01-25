@@ -40,11 +40,12 @@ const load = async () => (await Promise.all((await readdir('/service'))
   ]))))
   .reduce((acc, [ pkg, env, name, port, status ]) => (acc[name] = {
     ...pkg,
+    ...status,
     env,
     name,
-    ...status,
     port: port.trim(),
   }, acc), _services)
+// git --no-pager log -1 --pretty=format:"%H$%ct$%cn$%ce$%s"
 
 const statusEvent = new EventEmitter
 const sendLog = data => {
@@ -58,11 +59,12 @@ const sendLog = data => {
     const time = _services[name][key] = log.__REALTIME_TIMESTAMP
     console.log({ name, key, time })
     statusEvent.emit('data',
-      `{"status":true,"name":"${name}","key":"${key}","time":${time}}`)
+      `{"status":true,"name":"${name}","key":"${key}","time":"${time}"}`)
   } catch (err) {
     console.log('parse failed', err, data)
   }
 }
+
 statusEvent.start = () => {
   console.log('subscribing to systemd events')
   statusEvent.logger && statusEvent.logger.kill()
