@@ -9,14 +9,25 @@ const { required, optional } = require('4k/route-helper')
 // const addProxy = require('./add-proxy')
 const services = require('./services')
 const github = require('./github')
-const { DOMAIN, PORT } = process.env
+const testor = require('./testor')
 const db = require('./redis')
+
+const { DOMAIN, PORT } = process.env
 const linesToJSONArray = ({ stdout }) =>
   JSON.parse(`[${stdout.trim().split('\n').join(',\n')}]`)
 
 const routes = {
   OAUTH: { github: github.oauth },
   POST: {
+    '/exec': {
+      description: 'exec an action on a service',
+      params: {
+        name: required(String),
+        method: required(String),
+        params: required(String),
+      },
+      handler: testor.exec,
+    },
     '/env': {
       description: 'update service environement',
       params: {
@@ -53,6 +64,11 @@ const routes = {
     },
   },
   GET: {
+    '/methods': {
+      description: 'get methods of a service',
+      params: { name: required(String) },
+      handler: testor.get,
+    },
     '/services': {
       description: 'get service list',
       handler: services.getServices,

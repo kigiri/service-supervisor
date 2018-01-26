@@ -172,7 +172,7 @@ module.exports = {
       .map(key => String(_services[key].port))
 
     const port = generatePort(usedPorts.concat(reservedPorts))
-
+    process.env[`SERVICE_${name.toUpperCase()}_PORT`] = port
     _services[name] = { ...pkg, env, name, port }
     statusEvent.start()
     await Promise.all([
