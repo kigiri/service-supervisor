@@ -3,7 +3,8 @@ const netcall = require('netcall')
 const cache = Object.create(null)
 
 const get = async name => {
-  const service = (netcall[name] || (await netcall.init([ name ]))[name])
+  netcall[name] || (await netcall.init([ name ]))
+  const service = netcall[name]
   const c = cache[name] || (cache[name] = {
     fn: () => (netcall.kill(name), netcall[name] = undefined)
   })
