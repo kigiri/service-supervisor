@@ -29,6 +29,9 @@ const parseSystemd = async name =>
   .filter(isDoneStatus)
   .reduceRight(parseStatusLogs, {})
 
+const setPort = (name, port) =>
+  process.env[`SERVICE_${name.toUpperCase()}_PORT`] = port
+
 const load = async () => (await Promise.all((await readdir('/service'))
   .filter(notConfFile)
   .map(name => Promise.all([
@@ -43,7 +46,7 @@ const load = async () => (await Promise.all((await readdir('/service'))
     ...status,
     env,
     name,
-    port: port.trim(),
+    port: setPort(name, port.trim()),
   }, acc), _services)
 // git --no-pager log -1 --pretty=format:"%H$%ct$%cn$%ce$%s"
 
@@ -171,8 +174,7 @@ module.exports = {
     const reservedPorts = Object.keys(_services)
       .map(key => String(_services[key].port))
 
-    const port = generatePort(usedPorts.concat(reservedPorts))
-    process.env[`SERVICE_${name.toUpperCase()}_PORT`] = port
+    const port = setPort(name, generatePort(usedPorts.concat(reservedPorts)))
     _services[name] = { ...pkg, env, name, port }
     statusEvent.start()
     await Promise.all([
