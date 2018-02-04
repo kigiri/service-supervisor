@@ -17,16 +17,16 @@ const readPkg = name => readJSON(`/service/${name}/package.json`)
 const setPort = (name, port) =>
   process.env[`SERVICE_${name.toUpperCase()}_PORT`] = port
 
-const getBusInfo = ((parser, commandBase, commandEnd) => name => {
+const getBusInfo = ((parser, commandBase, commandEnd) => async name => {
   const rootCmd = `${commandBase}${name}${commandEnd}`
-  const { PID, started, stopped } = (await Promise.all([
+  const [ PID, started, stopped ] = (await Promise.all([
     exec(`${rootCmd}Service ExecMainPID`),
     exec(`${rootCmd}Unit ActiveEnterTimestamp`),
     exec(`${rootCmd}Unit ActiveExitTimestamp`),
   ])).map(parser)
 
   return { PID, started, stopped }
-})(s => Number(s.split(' ')[1].slice(0, 13)), [
+})(({ stdout }) => Number(stdout.split(/\s/)[1].slice(0, 13)), [
   'busctl get-property',
   'org.freedesktop.systemd1 /org/freedesktop/systemd1/unit/',
 ].join(' '), '_2eservice org.freedesktop.systemd1.')
