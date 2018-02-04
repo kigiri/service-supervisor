@@ -13,7 +13,23 @@ const get = async name => {
   return service
 }
 
+const noOp = () => {}
+let closePrevious = noOp
 module.exports = {
+  stopInspector: () => {
+    const f = closePrevious
+    closePrevious = noOp
+    return f()
+  },
+  inspect: async ({ name }) => {
+    await closePrevious()
+    const {
+      openInspector,
+      closeInspector,
+    } = netcall.getInternalMethods(netcall[name])
+    closePrevious = closeInspector
+    return openInspector()
+  },
   get: async ({ name }) => Object.keys(await get(name)),
   exec: async ({ name, method, params }) =>
     (await get(name))[method](JSON.parse(params)),
