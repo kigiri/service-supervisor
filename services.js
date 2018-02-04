@@ -48,6 +48,8 @@ const load = async () => (await Promise.all((await readdir('/service'))
     port: setPort(name, port.trim()),
   }, acc), _services)
 // git --no-pager log -1 --pretty=format:"%H$%ct$%cn$%ce$%s"
+const isDoneStatus = log => log.RESULT === 'done'
+  && log.CODE_FUNCTION === 'job_log_status_message'
 
 const statusEvent = new EventEmitter
 const sendLog = data => {
