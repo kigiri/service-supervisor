@@ -14,23 +14,22 @@ const notConfFile = name => !/\.(json|port)$/.test(name)
 const _services = Object.create(null)
 const readEnv = name => readJSON(`/service/${name}-env.json`)
 const readPkg = name => readJSON(`/service/${name}/package.json`)
-const isDoneStatus = log => log.RESULT === 'done'
-  && log.CODE_FUNCTION === 'job_log_status_message'
-const parseStatusLogs = (acc, log) => {
-  const key = log.MESSAGE.split(' ')[0].toLowerCase()
-  acc[key] || (acc[key] = log.__REALTIME_TIMESTAMP)
-  return acc
-}
-const parseSystemd = async name =>
-  (await exec(`journalctl -tsystemd -u${name}.service -n20 -ojson`)).stdout
-  .split('\n')
-  .filter(Boolean)
-  .map(JSON.parse)
-  .filter(isDoneStatus)
-  .reduceRight(parseStatusLogs, {})
-
 const setPort = (name, port) =>
   process.env[`SERVICE_${name.toUpperCase()}_PORT`] = port
+
+const getBusInfo = ((parser, commandBase, commandEnd) => name => {
+  const rootCmd = `${commandBase}${name}${commandEnd}`
+  const { PID, started, stopped } = (await Promise.all([
+    exec(`${rootCmd}Service ExecMainPID`),
+    exec(`${rootCmd}Unit ActiveEnterTimestamp`),
+    exec(`${rootCmd}Unit ActiveExitTimestamp`),
+  ])).map(parser)
+
+  return { PID, started, stopped }
+})(s => Number(s.split(' ')[1].slice(0, 13)), [
+  'busctl get-property',
+  'org.freedesktop.systemd1 /org/freedesktop/systemd1/unit/',
+].join(' '), '_2eservice org.freedesktop.systemd1.')
 
 const load = async () => (await Promise.all((await readdir('/service'))
   .filter(notConfFile)
@@ -39,7 +38,7 @@ const load = async () => (await Promise.all((await readdir('/service'))
     readEnv(name),
     name,
     readFile(`/service/${name}.port`, 'utf8'),
-    parseSystemd(name),
+    getBusInfo(name),
   ]))))
   .reduce((acc, [ pkg, env, name, port, status ]) => (acc[name] = {
     ...pkg,
