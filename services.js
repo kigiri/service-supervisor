@@ -26,7 +26,7 @@ const getBusInfo = ((parser, commandBase, commandEnd) => async name => {
   ])).map(parser)
 
   return { PID, started, stopped }
-})(({ stdout }) => Number(stdout.split(/\s/)[1].slice(0, 13)), [
+})(({ stdout }) => stdout.split(/\s/)[1], [
   'busctl get-property',
   'org.freedesktop.systemd1 /org/freedesktop/systemd1/unit/',
 ].join(' '), '_2eservice org.freedesktop.systemd1.')
